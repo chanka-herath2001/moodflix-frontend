@@ -229,17 +229,60 @@ const Dashboard = () => {
 
         {/* RECENT RECOMMENDATIONS */}
         {recentRecommendations && (
-          <Card sx={{ mb: 4, bgcolor: 'rgba(236,72,153,0.05)' }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                <History sx={{ mr: 1, color: '#ec4899' }} />
-                Your Last Recommendations
-              </Typography>
-              <Grid container spacing={2}>
-                {recentRecommendations.recommendations?.slice(0, 5).map((movie, idx) => (
+  <Card sx={{ mb: 4, bgcolor: 'rgba(236,72,153,0.05)' }}>
+    <CardContent>
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+        <History sx={{ mr: 1, color: '#ec4899' }} />
+        Your Last Recommendations
+      </Typography>
+
+      <Grid container spacing={2}>
+        {recentRecommendations.recommendations?.slice(0, 5).map((movie, idx) => (
                   <Grid item xs={6} sm={4} md={2.4} key={idx}>
-                    <Card>
-                      <CardMedia component="img" height={300} image={movie.poster_url} />
+                    <Card
+                      sx={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'scale(1.03)',
+                          boxShadow: '0 8px 24px rgba(236, 72, 153, 0.35)',
+                        },
+                      }}
+                    >
+                      {/* Poster */}
+                      <CardMedia
+                        component="img"
+                        height="300"
+                        image={movie.poster_url}
+                        alt={movie.title}
+                        sx={{ objectFit: 'cover' }}
+                      />
+
+                      {/* Title overlay (MovieCard-style) */}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          width: '100%',
+                          background: 'rgba(0, 0, 0, 0.8)',
+                          backdropFilter: 'blur(10px)',
+                          px: 1.5,
+                          py: 1,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {movie.title}
+                        </Typography>
+                      </Box>
                     </Card>
                   </Grid>
                 ))}
@@ -247,6 +290,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
 
         {/* FAVORITE MOVIES (NOT DROPPED 😤) */}
         {selectedMovies.length > 0 && (
