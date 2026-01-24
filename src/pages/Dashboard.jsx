@@ -246,8 +246,7 @@ const Dashboard = () => {
           <Grid item xs={12} lg={6}>
             <Card><CardContent>
               <SpotifySearch onAddSong={song => setSongs([...songs, song])} />
-              <Divider sx={{ my: 3 }} />
-              <CSVImport onImport={songs => setSongs(removeDuplicateSongs(songs))} />
+            
               <Divider sx={{ my: 3 }} />
               <SongList songs={songs} onRemoveSong={id => setSongs(s => s.filter(x => x.id !== id))} />
             </CardContent></Card>
