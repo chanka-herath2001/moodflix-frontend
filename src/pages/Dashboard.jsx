@@ -122,40 +122,56 @@ const Dashboard = () => {
   };
 
   const handleGetRecommendations = async () => {
-    if (songs.length === 0) {
-      showError('Please add at least one song!');
-      return;
-    }
+  if (songs.length === 0) {
+    showError('Please add at least one song!');
+    return;
+  }
 
-    setLoading(true);
-    startProgress();
+  setLoading(true);
+  startProgress();
 
-    try {
-      const selectedTitles = selectedMovies.map(m => m.title);
-      const recommendations = await api.getRecommendations(songs, selectedTitles);
+  try {
+    // ✅ 1. SAVE SONGS TO BACKEND (this was missing)
+    await api.setUserSongs(
+      songs.map(s => ({
+        title: s.title,
+        artist: s.artist,
+      }))
+    );
 
-      await storage.setUserPreferences(user.id, {
-        lastRecommendations: recommendations,
-        timestamp: new Date().toISOString(),
-      });
+    // ✅ 2. GET RECOMMENDATIONS
+    const selectedTitles = selectedMovies.map(m => m.title);
+    const recommendations = await api.getRecommendations(
+      songs,
+      selectedTitles
+    );
 
-      await loadRecentRecommendations();
-      await finishProgress();
+    // ✅ 3. OPTIONAL: save locally (no harm keeping this)
+    await storage.setUserPreferences(user.id, {
+      lastRecommendations: recommendations,
+      timestamp: new Date().toISOString(),
+    });
 
-      showSuccess('Got your perfect matches! ✨');
+    // ✅ 4. REFRESH HISTORY
+    await loadRecentRecommendations();
+    await finishProgress();
 
-      navigate('/results', {
-        state: { recommendations }
-      });
-    } catch (error) {
-      clearInterval(progressIntervalRef.current);
-      setProgress(0);
-      showError('Failed to get recommendations');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    showSuccess('Got your perfect matches! ✨');
+
+    navigate('/results', {
+      state: { recommendations },
+    });
+
+  } catch (error) {
+    clearInterval(progressIntervalRef.current);
+    setProgress(0);
+    showError('Failed to get recommendations');
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleOpenFeedback = () => {
     window.open(FEEDBACK_FORM_URL, '_blank', 'noopener,noreferrer');
@@ -246,7 +262,8 @@ const Dashboard = () => {
           <Grid item xs={12} lg={6}>
             <Card><CardContent>
               <SpotifySearch onAddSong={song => setSongs([...songs, song])} />
-            
+              {/* <Divider sx={{ my: 3 }} />
+              <CSVImport onImport={songs => setSongs(removeDuplicateSongs(songs))} /> */}
               <Divider sx={{ my: 3 }} />
               <SongList songs={songs} onRemoveSong={id => setSongs(s => s.filter(x => x.id !== id))} />
             </CardContent></Card>

@@ -111,7 +111,7 @@ const SpotifySearch = ({ onAddSong }) => {
     <Box sx={{ position: 'relative' }}>
       <TextField
         fullWidth
-        placeholder="Search for songs on Spotify..."
+        placeholder="Select 5 songs from Spotify..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         InputProps={{
