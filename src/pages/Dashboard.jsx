@@ -51,6 +51,16 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  const syncFavoriteMovies = async (movies) => {
+  await api.setFavoriteMovies(
+    movies.map(m => ({
+      movie_title: m.title,
+      poster_url: m.poster_url,
+    }))
+  );
+};
+
+
   const loadUserData = async () => {
     if (!user) return;
     try {
@@ -60,12 +70,13 @@ const Dashboard = () => {
       ]);
 
       if (savedSongs.length > 0) {
-          setSongs(savedSongs.map(s => ({
-            id: s.id || `${s.song_title}-${s.artist_name}`,
-            title: s.song_title,
-            artist: s.artist_name,
-          })));
-        }
+        setSongs(savedSongs.map(s => ({
+          id: s.id || `${s.title}-${s.artist}`,
+          title: s.title,
+          artist: s.artist
+        })));
+      }
+
 
       if (savedMovies.length > 0) {
         setSelectedMovies(savedMovies.map(m => ({
@@ -284,13 +295,19 @@ const Dashboard = () => {
           <MovieGrid
             movies={moviePool}
             selectedMovies={selectedMovies}
-            onToggleMovie={movie =>
-              setSelectedMovies(prev =>
-                prev.find(m => m.title === movie.title)
-                  ? prev.filter(m => m.title !== movie.title)
-                  : [...prev, movie]
-              )
-            }
+            onToggleMovie={async (movie) => {
+  setSelectedMovies(prev => {
+    const updated = prev.find(m => m.title === movie.title)
+      ? prev.filter(m => m.title !== movie.title)
+      : [...prev, movie];
+
+    // 🔥 persist to backend
+    syncFavoriteMovies(updated).catch(console.error);
+
+    return updated;
+  });
+}}
+
           />
         </Box>
       )}
