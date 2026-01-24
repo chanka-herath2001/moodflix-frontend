@@ -303,6 +303,7 @@ const Dashboard = () => {
           {loadingMovies ? (
             <CircularProgress />
           ) : (
+            <Box sx={{ maxHeight: { xs: 400, sm: 600 }, overflow: 'auto', }} >
             <MovieGrid
               movies={moviePool}
               selectedMovies={selectedMovies}
@@ -317,6 +318,7 @@ const Dashboard = () => {
                 });
               }}
             />
+            </Box>
           )}
         </CardContent>
       </Card>
