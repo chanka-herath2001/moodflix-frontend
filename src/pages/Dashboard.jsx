@@ -250,16 +250,6 @@ const Dashboard = () => {
 
         {/* FAVORITE MOVIES (NOT DROPPED 😤) */}
         {selectedMovies.length > 0 && (
-          <Card sx={{ mb: 4, bgcolor: 'rgba(168,85,247,0.05)' }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                <Favorite sx={{ mr: 1, color: '#a855f7' }} />
-                Your Favorite Movies ({selectedMovies.length})
-              </Typography>
-              <Grid container spacing={2}>
-                {selectedMovies.slice(0, 6).map((movie, idx) => (
-                  <Grid item xs={6} sm={4} md={2} key={idx}>
-                    {selectedMovies.length > 0 && (
   <Card sx={{ mb: 4, bgcolor: 'rgba(168,85,247,0.05)' }}>
     <CardContent>
       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
@@ -281,12 +271,6 @@ const Dashboard = () => {
     </CardContent>
   </Card>
 )}
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </Card>
-        )}
 
         {/* MUSIC + MOVIES GRID */}
         <Grid container spacing={3}>
