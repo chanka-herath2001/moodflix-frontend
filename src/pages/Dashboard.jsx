@@ -60,8 +60,13 @@ const Dashboard = () => {
       ]);
 
       if (savedSongs.length > 0) {
-        setSongs(savedSongs.map(s => ({ ...s, id: s.id || `${s.title}-${s.artist}` })));
-      }
+          setSongs(savedSongs.map(s => ({
+            id: s.id || `${s.song_title}-${s.artist_name}`,
+            title: s.song_title,
+            artist: s.artist_name,
+          })));
+        }
+
       if (savedMovies.length > 0) {
         setSelectedMovies(savedMovies.map(m => ({
           title: m.movie_title,
