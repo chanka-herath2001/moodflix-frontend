@@ -238,7 +238,7 @@ const Dashboard = () => {
                 {recentRecommendations.recommendations?.slice(0, 5).map((movie, idx) => (
                   <Grid item xs={6} sm={4} md={2.4} key={idx}>
                     <Card>
-                      <CardMedia component="img" height={180} image={movie.poster_url} />
+                      <CardMedia component="img" height={300} image={movie.poster_url} />
                     </Card>
                   </Grid>
                 ))}
@@ -259,7 +259,7 @@ const Dashboard = () => {
                 {selectedMovies.slice(0, 6).map((movie, idx) => (
                   <Grid item xs={6} sm={4} md={2} key={idx}>
                     <Card>
-                      <CardMedia component="img" height={160} image={movie.poster_url} />
+                      <CardMedia component="img" height={300} image={movie.poster_url} />
                     </Card>
                   </Grid>
                 ))}
@@ -270,52 +270,59 @@ const Dashboard = () => {
 
         {/* MUSIC + MOVIES GRID */}
         <Grid container spacing={3}>
-          <Grid item xs={12} lg={6}>
-            <Card><CardContent>
-              <SpotifySearch onAddSong={song => setSongs([...songs, song])} />
-              {/* <Divider sx={{ my: 3 }} />
-              <CSVImport onImport={songs => setSongs(removeDuplicateSongs(songs))} /> */}
-              <Divider sx={{ my: 3 }} />
-              <SongList songs={songs} onRemoveSong={id => setSongs(s => s.filter(x => x.id !== id))} />
-            </CardContent></Card>
-          </Grid>
+  {/* MUSIC SECTION */}
+  <Grid item xs={12}>
+    <Card>
+      <CardContent>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+          Your Music
+        </Typography>
 
-          <Grid item xs={12} lg={6}>
-  <Card>
-    <CardContent>
-      {loadingMovies ? (
-        <CircularProgress />
-      ) : (
-        <Box
-          sx={{
-            maxHeight: { xs: 400, sm: 600 },
-            overflow: 'auto',
-          }}
-        >
-          <MovieGrid
-            movies={moviePool}
-            selectedMovies={selectedMovies}
-            onToggleMovie={async (movie) => {
-  setSelectedMovies(prev => {
-    const updated = prev.find(m => m.title === movie.title)
-      ? prev.filter(m => m.title !== movie.title)
-      : [...prev, movie];
+        <SpotifySearch onAddSong={song => setSongs([...songs, song])} />
 
-    // 🔥 persist to backend
-    syncFavoriteMovies(updated).catch(console.error);
+        <Divider sx={{ my: 3 }} />
 
-    return updated;
-  });
-}}
+        <SongList
+          songs={songs}
+          onRemoveSong={id =>
+            setSongs(s => s.filter(x => x.id !== id))
+          }
+        />
+      </CardContent>
+    </Card>
+  </Grid>
 
-          />
-        </Box>
-      )}
-    </CardContent>
-  </Card>
-</Grid>
+  {/* MOVIE SELECTION SECTION */}
+    <Grid item xs={12}>
+      <Card>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+            Select Movies You Love
+          </Typography>
 
-        </Grid>
+          {loadingMovies ? (
+            <CircularProgress />
+          ) : (
+            <MovieGrid
+              movies={moviePool}
+              selectedMovies={selectedMovies}
+              onToggleMovie={async (movie) => {
+                setSelectedMovies(prev => {
+                  const updated = prev.find(m => m.title === movie.title)
+                    ? prev.filter(m => m.title !== movie.title)
+                    : [...prev, movie];
+
+                  syncFavoriteMovies(updated).catch(console.error);
+                  return updated;
+                });
+              }}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </Grid>
+  </Grid>
+
 
         {/* CTA BUTTON */}
 <Box sx={{ textAlign: 'center', mt: 4 }}>
