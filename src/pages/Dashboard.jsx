@@ -17,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/Layout/Footer';
 import Navbar from '../components/Layout/NavBar';
 import MovieGrid from '../components/movies/MovieGrid';
+import MovieCard from '../components/movies/MovieCard';
 import CSVImport from '../components/music/CSVImport';
 import SongList from '../components/music/SongList';
 import SpotifySearch from '../components/music/SpotifySearch';
@@ -258,9 +259,28 @@ const Dashboard = () => {
               <Grid container spacing={2}>
                 {selectedMovies.slice(0, 6).map((movie, idx) => (
                   <Grid item xs={6} sm={4} md={2} key={idx}>
-                    <Card>
-                      <CardMedia component="img" height={300} image={movie.poster_url} />
-                    </Card>
+                    {selectedMovies.length > 0 && (
+  <Card sx={{ mb: 4, bgcolor: 'rgba(168,85,247,0.05)' }}>
+    <CardContent>
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+        <Favorite sx={{ mr: 1, color: '#a855f7' }} />
+        Your Favorite Movies ({selectedMovies.length})
+      </Typography>
+
+      <Grid container spacing={2}>
+        {selectedMovies.slice(0, 6).map((movie, idx) => (
+          <Grid item xs={6} sm={4} md={2} key={idx}>
+            <MovieCard
+              movie={movie}
+              selected
+              disableToggle
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </CardContent>
+  </Card>
+)}
                   </Grid>
                 ))}
               </Grid>
