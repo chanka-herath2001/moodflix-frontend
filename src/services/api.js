@@ -30,16 +30,23 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    const hasToken = !!localStorage.getItem("access_token");
+
+    if (error.response?.status === 401 && hasToken) {
+      console.warn("🔐 Token expired, logging out user");
+
       localStorage.removeItem("access_token");
       localStorage.removeItem("current_user");
+
       window.location.href = "/";
     }
+
+    // IMPORTANT: Guests should NOT be redirected
     console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
-  },
+  }
 );
+
 
 export const api = {
   // ===== Authentication =====
