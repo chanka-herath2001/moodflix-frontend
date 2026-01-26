@@ -30,22 +30,23 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const hasToken = !!localStorage.getItem("access_token");
+    const status = error.response?.status;
 
-    if (error.response?.status === 401 && hasToken) {
-      console.warn("🔐 Token expired, logging out user");
+    if (status === 401) {
+      console.warn("🔐 401 from API (auth required endpoint)");
 
+      // Clear invalid token if present
       localStorage.removeItem("access_token");
       localStorage.removeItem("current_user");
 
-      window.location.href = "/";
+      // ❌ DO NOT redirect here
+      // Routing must be handled per-page
     }
 
-    // IMPORTANT: Guests should NOT be redirected
-    console.error("API Error:", error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
+
 
 
 export const api = {
