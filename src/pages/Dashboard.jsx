@@ -1,4 +1,4 @@
-import { AutoAwesome, Favorite, Feedback, History } from '@mui/icons-material';
+import { AutoAwesome, Favorite, Feedback, History, Login } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -10,7 +10,7 @@ import {
   Divider,
   Grid,
   LinearProgress,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -39,13 +39,18 @@ const Dashboard = () => {
   const [loadingMovies, setLoadingMovies] = useState(true);
   const [recentRecommendations, setRecentRecommendations] = useState(null);
 
-  // 🔥 Progress bar state
+  // Progress bar state
   const [progress, setProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const progressIntervalRef = useRef(null);
 
   const FEEDBACK_FORM_URL = 'https://forms.gle/hexWyezcV1wt55CC9';
 
   useEffect(() => {
+    if (!user) {
+      navigate('/');
+      return;
+    }
     loadUserData();
     loadMovies();
     loadRecentRecommendations();
@@ -53,14 +58,13 @@ const Dashboard = () => {
   }, [user]);
 
   const syncFavoriteMovies = async (movies) => {
-  await api.setFavoriteMovies(
-    movies.map(m => ({
-      movie_title: m.title,
-      poster_url: m.poster_url,
-    }))
-  );
-};
-
+    await api.setFavoriteMovies(
+      movies.map((m) => ({
+        movie_title: m.title,
+        poster_url: m.poster_url,
+      }))
+    );
+  };
 
   const loadUserData = async () => {
     if (!user) return;
@@ -71,19 +75,22 @@ const Dashboard = () => {
       ]);
 
       if (savedSongs.length > 0) {
-        setSongs(savedSongs.map(s => ({
-          id: s.id || `${s.title}-${s.artist}`,
-          title: s.title,
-          artist: s.artist
-        })));
+        setSongs(
+          savedSongs.map((s) => ({
+            id: s.id || `${s.title}-${s.artist}`,
+            title: s.title,
+            artist: s.artist,
+          }))
+        );
       }
 
-
       if (savedMovies.length > 0) {
-        setSelectedMovies(savedMovies.map(m => ({
-          title: m.movie_title,
-          poster_url: m.poster_url
-        })));
+        setSelectedMovies(
+          savedMovies.map((m) => ({
+            title: m.movie_title,
+            poster_url: m.poster_url,
+          }))
+        );
       }
     } catch (err) {
       console.error(err);
@@ -113,16 +120,35 @@ const Dashboard = () => {
     }
   };
 
-  // ============================
-  // 🚀 PROGRESS BAR LOGIC
-  // ============================
-
   const startProgress = () => {
     setProgress(0);
+    const messages = [
+      'Fetching lyrics from Genius...',
+      'Analyzing mood from lyrics...',
+      'Finding perfect matches...',
+      'Almost there...',
+    ];
+    
+    let messageIndex = 0;
+    setLoadingMessage(messages[0]);
+
     progressIntervalRef.current = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) return prev;
-        return prev + Math.random() * 2; // smooth + organic
+      setProgress((prev) => {
+        const newProgress = prev + Math.random() * 3;
+        
+        // Change message at certain milestones
+        if (newProgress > 25 && messageIndex === 0) {
+          messageIndex = 1;
+          setLoadingMessage(messages[1]);
+        } else if (newProgress > 50 && messageIndex === 1) {
+          messageIndex = 2;
+          setLoadingMessage(messages[2]);
+        } else if (newProgress > 75 && messageIndex === 2) {
+          messageIndex = 3;
+          setLoadingMessage(messages[3]);
+        }
+
+        return newProgress >= 90 ? prev : newProgress;
       });
     }, 800);
   };
@@ -130,71 +156,93 @@ const Dashboard = () => {
   const finishProgress = async () => {
     clearInterval(progressIntervalRef.current);
     setProgress(100);
-    await new Promise(res => setTimeout(res, 400)); // tiny pause for UX
+    setLoadingMessage('Complete!');
+    await new Promise((res) => setTimeout(res, 400));
   };
 
   const handleGetRecommendations = async () => {
-  if (songs.length === 0) {
-    showError('Please add at least one song!');
-    return;
-  }
+    if (songs.length === 0) {
+      showError('Please add at least one song!');
+      return;
+    }
 
-  setLoading(true);
-  startProgress();
+    setLoading(true);
+    startProgress();
 
-  try {
-    // ✅ 1. SAVE SONGS TO BACKEND (this was missing)
-    await api.setUserSongs(
-      songs.map(s => ({
-        title: s.title,
-        artist: s.artist,
-      }))
-    );
+    try {
+      // Save songs to backend
+      await api.setUserSongs(
+        songs.map((s) => ({
+          title: s.title,
+          artist: s.artist,
+        }))
+      );
 
-    // ✅ 2. GET RECOMMENDATIONS
-    const selectedTitles = selectedMovies.map(m => m.title);
-    const recommendations = await api.getRecommendations(
-      songs,
-      selectedTitles
-    );
+      // Get recommendations
+      const selectedTitles = selectedMovies.map((m) => m.title);
+      const recommendations = await api.getRecommendations(songs, selectedTitles);
 
-    // ✅ 3. OPTIONAL: save locally (no harm keeping this)
-    await storage.setUserPreferences(user.id, {
-      lastRecommendations: recommendations,
-      timestamp: new Date().toISOString(),
-    });
+      // Save locally
+      await storage.setUserPreferences(user.id, {
+        lastRecommendations: recommendations,
+        timestamp: new Date().toISOString(),
+      });
 
-    // ✅ 4. REFRESH HISTORY
-    await loadRecentRecommendations();
-    await finishProgress();
+      // Refresh history
+      await loadRecentRecommendations();
+      await finishProgress();
 
-    showSuccess('Got your perfect matches! ✨');
+      showSuccess('Got your perfect matches! ✨');
 
-    navigate('/results', {
-      state: { recommendations },
-    });
-
-  } catch (error) {
-    clearInterval(progressIntervalRef.current);
-    setProgress(0);
-    showError('Failed to get recommendations');
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      navigate('/results', {
+        state: { recommendations },
+      });
+    } catch (error) {
+      clearInterval(progressIntervalRef.current);
+      setProgress(0);
+      setLoadingMessage('');
+      showError('Failed to get recommendations');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenFeedback = () => {
     window.open(FEEDBACK_FORM_URL, '_blank', 'noopener,noreferrer');
   };
+
+  if (!user) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Card sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h5" sx={{ mb: 2 }}>
+            Please log in to access the dashboard
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Login />}
+            onClick={() => navigate('/')}
+          >
+            Go to Home
+          </Button>
+        </Card>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <Navbar />
 
       <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 4 } }}>
-
         {/* HEADER */}
         <Box
           sx={{
@@ -205,7 +253,10 @@ const Dashboard = () => {
             mb: 4,
           }}
         >
-          <Typography variant="h3" sx={{ fontWeight: 900, fontSize: { xs: '2rem', sm: '3rem' } }}>
+          <Typography
+            variant="h3"
+            sx={{ fontWeight: 900, fontSize: { xs: '2rem', sm: '3rem' } }}
+          >
             Build Your Music Profile
           </Typography>
 
@@ -223,21 +274,17 @@ const Dashboard = () => {
           </Button>
         </Box>
 
-      
-
-        {/* ===== REST OF YOUR UI (UNCHANGED) ===== */}
-
         {/* RECENT RECOMMENDATIONS */}
         {recentRecommendations && (
-  <Card sx={{ mb: 4, bgcolor: 'rgba(236,72,153,0.05)' }}>
-    <CardContent>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        <History sx={{ mr: 1, color: '#ec4899' }} />
-        Your Last Recommendations
-      </Typography>
+          <Card sx={{ mb: 4, bgcolor: 'rgba(236,72,153,0.05)' }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <History sx={{ mr: 1, color: '#ec4899' }} />
+                Your Last Recommendations
+              </Typography>
 
-      <Grid container spacing={2}>
-        {recentRecommendations.recommendations?.slice(0, 5).map((movie, idx) => (
+              <Grid container spacing={2}>
+                {recentRecommendations.recommendations?.slice(0, 5).map((movie, idx) => (
                   <Grid item xs={6} sm={4} md={2.4} key={idx}>
                     <Card
                       sx={{
@@ -250,7 +297,6 @@ const Dashboard = () => {
                         },
                       }}
                     >
-                      {/* Poster */}
                       <CardMedia
                         component="img"
                         height="300"
@@ -259,7 +305,6 @@ const Dashboard = () => {
                         sx={{ objectFit: 'cover' }}
                       />
 
-                      {/* Title overlay (MovieCard-style) */}
                       <Box
                         sx={{
                           position: 'absolute',
@@ -291,122 +336,119 @@ const Dashboard = () => {
           </Card>
         )}
 
-
-        {/* FAVORITE MOVIES (NOT DROPPED 😤) */}
+        {/* FAVORITE MOVIES */}
         {selectedMovies.length > 0 && (
-  <Card sx={{ mb: 4, bgcolor: 'rgba(168,85,247,0.05)' }}>
-    <CardContent>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        <Favorite sx={{ mr: 1, color: '#a855f7' }} />
-        Your Favorite Movies ({selectedMovies.length})
-      </Typography>
+          <Card sx={{ mb: 4, bgcolor: 'rgba(168,85,247,0.05)' }}>
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                <Favorite sx={{ mr: 1, color: '#a855f7' }} />
+                Your Favorite Movies ({selectedMovies.length})
+              </Typography>
 
-      <Grid container spacing={2}>
-        {selectedMovies.slice(0, 6).map((movie, idx) => (
-          <Grid item xs={6} sm={4} md={2} key={idx}>
-            <MovieCard
-              movie={movie}
-              selected
-              disableToggle
-            />
-          </Grid>
-        ))}
-      </Grid>
-    </CardContent>
-  </Card>
-)}
+              <Grid container spacing={2}>
+                {selectedMovies.slice(0, 6).map((movie, idx) => (
+                  <Grid item xs={6} sm={4} md={2} key={idx}>
+                    <MovieCard movie={movie} selected disableToggle />
+                  </Grid>
+                ))}
+              </Grid>
+            </CardContent>
+          </Card>
+        )}
 
         {/* MUSIC + MOVIES GRID */}
         <Grid container spacing={3}>
-  {/* MUSIC SECTION */}
-  <Grid item xs={12}>
-    <Card>
-      <CardContent>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-          Your Music
-        </Typography>
+          {/* MUSIC SECTION */}
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                  Your Music
+                </Typography>
 
-        <SpotifySearch onAddSong={song => setSongs([...songs, song])} />
+                <SpotifySearch onAddSong={(song) => setSongs([...songs, song])} />
 
-        <Divider sx={{ my: 3 }} />
+                <Divider sx={{ my: 3 }} />
 
-        <SongList
-          songs={songs}
-          onRemoveSong={id =>
-            setSongs(s => s.filter(x => x.id !== id))
-          }
-        />
-      </CardContent>
-    </Card>
-  </Grid>
+                <SongList
+                  songs={songs}
+                  onRemoveSong={(id) => setSongs((s) => s.filter((x) => x.id !== id))}
+                />
+              </CardContent>
+            </Card>
+          </Grid>
 
-  {/* MOVIE SELECTION SECTION */}
-    <Grid item xs={12}>
-      <Card>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-            Select Movies You Love
-          </Typography>
+          {/* MOVIE SELECTION SECTION */}
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                  Select Movies You Love
+                </Typography>
 
-          {loadingMovies ? (
-            <CircularProgress />
-          ) : (
-            <Box sx={{ maxHeight: { xs: 400, sm: 600 }, overflow: 'auto', }} >
-            <MovieGrid
-              movies={moviePool}
-              selectedMovies={selectedMovies}
-              onToggleMovie={async (movie) => {
-                setSelectedMovies(prev => {
-                  const updated = prev.find(m => m.title === movie.title)
-                    ? prev.filter(m => m.title !== movie.title)
-                    : [...prev, movie];
+                {loadingMovies ? (
+                  <CircularProgress />
+                ) : (
+                  <Box sx={{ maxHeight: { xs: 400, sm: 600 }, overflow: 'auto' }}>
+                    <MovieGrid
+                      movies={moviePool}
+                      selectedMovies={selectedMovies}
+                      onToggleMovie={async (movie) => {
+                        setSelectedMovies((prev) => {
+                          const updated = prev.find((m) => m.title === movie.title)
+                            ? prev.filter((m) => m.title !== movie.title)
+                            : [...prev, movie];
 
-                  syncFavoriteMovies(updated).catch(console.error);
-                  return updated;
-                });
-              }}
-            />
+                          syncFavoriteMovies(updated).catch(console.error);
+                          return updated;
+                        });
+                      }}
+                    />
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* CTA BUTTON WITH PROGRESS */}
+        <Box sx={{ textAlign: 'center', mt: 4 }}>
+          {loading && (
+            <Box sx={{ mb: 2, maxWidth: 520, mx: 'auto' }}>
+              <Typography
+                variant="body2"
+                sx={{ mb: 1, color: '#ec4899', fontWeight: 600 }}
+              >
+                {loadingMessage}
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 5,
+                    background: 'linear-gradient(90deg, #ec4899, #a855f7)',
+                    transition: 'width 0.6s ease-in-out',
+                  },
+                }}
+              />
             </Box>
           )}
-        </CardContent>
-      </Card>
-    </Grid>
-  </Grid>
 
-
-        {/* CTA BUTTON */}
-<Box sx={{ textAlign: 'center', mt: 4 }}>
-  {loading && (
-    <Box sx={{ mb: 2, maxWidth: 520, mx: 'auto' }}>
-      <LinearProgress
-        variant="determinate"
-        value={progress}
-        sx={{
-          height: 10,
-          borderRadius: 5,
-          backgroundColor: 'rgba(255,255,255,0.1)',
-          '& .MuiLinearProgress-bar': {
-            borderRadius: 5,
-            background: 'linear-gradient(90deg, #ec4899, #a855f7)',
-            transition: 'width 0.6s ease-in-out',
-          },
-        }}
-      />
-    </Box>
-  )}
-
-  <Button
-    variant="contained"
-    size="large"
-    disabled={loading}
-    onClick={handleGetRecommendations}
-    startIcon={<AutoAwesome />}
-    sx={{ px: 6, py: 2, fontSize: '1.2rem' }}
-  >
-    Get Movie Recommendations
-  </Button>
-</Box>
-
+          <Button
+            variant="contained"
+            size="large"
+            disabled={loading}
+            onClick={handleGetRecommendations}
+            startIcon={<AutoAwesome />}
+            sx={{ px: 6, py: 2, fontSize: '1.2rem' }}
+          >
+            Get Movie Recommendations
+          </Button>
+        </Box>
       </Container>
 
       <Footer />

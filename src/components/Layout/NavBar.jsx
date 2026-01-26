@@ -1,10 +1,10 @@
-import { Logout, Movie, MusicNote } from '@mui/icons-material';
+import { Login, Logout, Movie, MusicNote } from '@mui/icons-material';
 import { AppBar, Avatar, Box, Button, Toolbar, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
-const Navbar = () => {
+const Navbar = ({ onLoginClick }) => {
   const { user, logout } = useAuth();
   const { showSuccess } = useNotification();
   const navigate = useNavigate();
@@ -13,6 +13,14 @@ const Navbar = () => {
     const result = await logout();
     if (result.success) {
       showSuccess('Logged out successfully! 👋');
+      navigate('/');
+    }
+  };
+
+  const handleLogin = () => {
+    if (onLoginClick) {
+      onLoginClick();
+    } else {
       navigate('/');
     }
   };
@@ -28,7 +36,16 @@ const Navbar = () => {
       }}
     >
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexGrow: 1,
+            cursor: 'pointer',
+          }}
+          onClick={() => navigate(user ? '/dashboard' : '/')}
+        >
           <MusicNote sx={{ color: '#ec4899' }} />
           <Typography
             variant="h6"
@@ -44,7 +61,7 @@ const Navbar = () => {
           <Movie sx={{ color: '#a855f7' }} />
         </Box>
 
-        {user && (
+        {user ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar
               sx={{
@@ -72,6 +89,19 @@ const Navbar = () => {
               Logout
             </Button>
           </Box>
+        ) : (
+          <Button
+            startIcon={<Login />}
+            onClick={handleLogin}
+            sx={{
+              color: 'white',
+              '&:hover': {
+                background: 'rgba(236, 72, 153, 0.1)',
+              },
+            }}
+          >
+            Login
+          </Button>
         )}
       </Toolbar>
     </AppBar>
