@@ -42,25 +42,23 @@ function App() {
       }}
     >
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/results"
-          element={
-            <ProtectedRoute>
-              <Results />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+  <Route path="/" element={<Landing />} />
+
+  <Route
+    path="/dashboard"
+    element={
+      <ProtectedRoute>
+        <Dashboard />
+      </ProtectedRoute>
+    }
+  />
+
+  {/* ✅ PUBLIC RESULTS PAGE */}
+  <Route path="/results" element={<Results />} />
+
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
+
     </Box>
   );
 }
