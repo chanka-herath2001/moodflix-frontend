@@ -1,4 +1,10 @@
-import { ArrowBack, EmojiEmotions, SentimentDissatisfied, Spa, Whatshot } from '@mui/icons-material';
+import {
+  ArrowBack,
+  EmojiEmotions,
+  SentimentDissatisfied,
+  Spa,
+  Whatshot,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -36,47 +42,45 @@ const Results = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+
   const [recommendations, setRecommendations] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Run ONCE only – auth is optional
   useEffect(() => {
     loadRecommendations();
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadRecommendations = async () => {
-    console.log('📍 Results page - Loading recommendations...');
-    console.log('Location state:', location.state);
-    
+    console.log('📍 Results page - loading');
+
     try {
-      // First try to get from navigation state
+      // 1️⃣ Navigation state (guest + logged-in)
       if (location.state?.recommendations) {
-        console.log('✅ Got recommendations from navigation state');
+        console.log('✅ Using navigation state');
         setRecommendations(location.state.recommendations);
-        setLoading(false);
         return;
       }
 
-      // Then try storage (only if user is logged in)
+      // 2️⃣ Storage (logged-in only)
       if (user) {
-        console.log('🔍 Checking storage for user:', user.id);
+        console.log('🔐 Fetching stored recommendations for:', user.id);
         const prefs = await storage.getUserPreferences(user.id);
-        console.log('Storage preferences:', prefs);
-        
-        if (prefs && prefs.lastRecommendations) {
-          console.log('✅ Got recommendations from storage');
+
+        if (prefs?.lastRecommendations) {
+          console.log('✅ Using stored recommendations');
           setRecommendations(prefs.lastRecommendations);
-          setLoading(false);
           return;
         }
       }
 
-      // No recommendations found
-      console.log('❌ No recommendations found, redirecting');
-      navigate(user ? '/dashboard' : '/', { replace: true });
-      
-    } catch (error) {
-      console.error('❌ Failed to load recommendations:', error);
-      navigate(user ? '/dashboard' : '/', { replace: true });
+      // 3️⃣ Nothing found → home (NOT auth-related)
+      console.log('❌ No recommendations found');
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error('❌ Failed to load results:', err);
+      navigate('/', { replace: true });
     } finally {
       setLoading(false);
     }
@@ -86,51 +90,47 @@ const Results = () => {
     return (
       <Box sx={{ minHeight: '100vh' }}>
         <Navbar />
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+        <Box
+          sx={{
+            minHeight: '80vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <Typography>Loading recommendations...</Typography>
         </Box>
       </Box>
     );
   }
 
-  if (!recommendations) {
-    return (
-      <Box sx={{ minHeight: '100vh' }}>
-        <Navbar />
-        <Container maxWidth="lg" sx={{ py: 8, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ mb: 4 }}>
-            No recommendations found
-          </Typography>
-          <Button variant="contained" onClick={() => navigate('/dashboard')}>
-            Go to Dashboard
-          </Button>
-        </Container>
-      </Box>
-    );
-  }
+  if (!recommendations) return null;
 
   console.log('🎬 Rendering results with:', recommendations);
 
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <Navbar />
-      
+
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography
-            variant="h3"
-            sx={{
-              fontWeight: 900,
-            }}
-          >
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 4,
+          }}
+        >
+          <Typography variant="h3" sx={{ fontWeight: 900 }}>
             Your Perfect Matches ✨
           </Typography>
+
           <Button
             startIcon={<ArrowBack />}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate(user ? '/dashboard' : '/')}
             variant="outlined"
           >
-            Back to Dashboard
+            {user ? 'Back to Dashboard' : 'Back to Home'}
           </Button>
         </Box>
 
@@ -140,48 +140,54 @@ const Results = () => {
             <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
               Your Mood Profile
             </Typography>
+
             <Grid container spacing={3}>
-              {Object.entries(recommendations.ensemble).map(([emotion, value]) => (
-                <Grid item xs={6} md={3} key={emotion}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Box
-                      sx={{
-                        fontSize: 48,
-                        mb: 1,
-                        color: emotionColors[emotion],
-                      }}
-                    >
-                      {emotionIcons[emotion]}
+              {Object.entries(recommendations.ensemble).map(
+                ([emotion, value]) => (
+                  <Grid item xs={6} md={3} key={emotion}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Box
+                        sx={{
+                          fontSize: 48,
+                          mb: 1,
+                          color: emotionColors[emotion],
+                        }}
+                      >
+                        {emotionIcons[emotion]}
+                      </Box>
+
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          textTransform: 'capitalize',
+                          mb: 1,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {emotion}
+                      </Typography>
+
+                      <LinearProgress
+                        variant="determinate"
+                        value={value * 100}
+                        sx={{
+                          height: 8,
+                          borderRadius: 4,
+                          mb: 1,
+                          bgcolor: 'rgba(255,255,255,0.1)',
+                          '& .MuiLinearProgress-bar': {
+                            bgcolor: emotionColors[emotion],
+                          },
+                        }}
+                      />
+
+                      <Typography variant="body2" color="text.secondary">
+                        {(value * 100).toFixed(0)}%
+                      </Typography>
                     </Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        textTransform: 'capitalize',
-                        mb: 1,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {emotion}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={value * 100}
-                      sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        mb: 1,
-                        bgcolor: 'rgba(255,255,255,0.1)',
-                        '& .MuiLinearProgress-bar': {
-                          bgcolor: emotionColors[emotion],
-                        },
-                      }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {(value * 100).toFixed(0)}%
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
+                  </Grid>
+                )
+              )}
             </Grid>
           </CardContent>
         </Card>
@@ -190,6 +196,7 @@ const Results = () => {
         <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
           Recommended Movies
         </Typography>
+
         <Grid container spacing={3}>
           {recommendations.recommendations.map((movie, index) => (
             <Grid item xs={12} sm={6} md={4} lg={2.4} key={index}>
@@ -197,9 +204,7 @@ const Results = () => {
                 sx={{
                   height: '100%',
                   transition: 'transform 0.2s',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  },
+                  '&:hover': { transform: 'scale(1.05)' },
                 }}
               >
                 <Box sx={{ position: 'relative' }}>
@@ -222,6 +227,7 @@ const Results = () => {
                     }}
                   />
                 </Box>
+
                 <CardContent>
                   <Typography
                     variant="h6"
@@ -237,20 +243,22 @@ const Results = () => {
                   >
                     {movie.title}
                   </Typography>
-                  
+
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
+                    >
                       Match Score
                     </Typography>
+
                     <LinearProgress
                       variant="determinate"
                       value={movie.final_score * 100}
-                      sx={{
-                        height: 6,
-                        borderRadius: 3,
-                        mb: 0.5,
-                      }}
+                      sx={{ height: 6, borderRadius: 3, mb: 0.5 }}
                     />
+
                     <Typography variant="caption" color="text.secondary">
                       {(movie.final_score * 100).toFixed(0)}%
                     </Typography>
@@ -258,10 +266,12 @@ const Results = () => {
 
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     {Object.entries(movie)
-                      .filter(([key]) => ['happy', 'sad', 'angry', 'relaxed'].includes(key))
+                      .filter(([key]) =>
+                        ['happy', 'sad', 'angry', 'relaxed'].includes(key)
+                      )
                       .sort(([, a], [, b]) => b - a)
                       .slice(0, 2)
-                      .map(([emotion, value]) => (
+                      .map(([emotion]) => (
                         <Chip
                           key={emotion}
                           label={emotion}
@@ -280,7 +290,8 @@ const Results = () => {
           ))}
         </Grid>
       </Container>
-      <Footer/>
+
+      <Footer />
     </Box>
   );
 };
