@@ -45,16 +45,8 @@ const Results = () => {
 
   const loadRecommendations = async () => {
     console.log('📍 Results page - Loading recommendations...');
-    console.log('User:', user);
     console.log('Location state:', location.state);
-    console.log('Current pathname:', location.pathname);
     
-    if (!user) {
-      console.log('❌ No user found, should redirect to home');
-      navigate('/', { replace: true });
-      return;
-    }
-
     try {
       // First try to get from navigation state
       if (location.state?.recommendations) {
@@ -64,21 +56,27 @@ const Results = () => {
         return;
       }
 
-      // Then try storage
-      console.log('🔍 Checking storage for user:', user.id);
-      const prefs = await storage.getUserPreferences(user.id);
-      console.log('Storage preferences:', prefs);
-      
-      if (prefs && prefs.lastRecommendations) {
-        console.log('✅ Got recommendations from storage');
-        setRecommendations(prefs.lastRecommendations);
-      } else {
-        console.log('❌ No recommendations found in storage, redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
+      // Then try storage (only if user is logged in)
+      if (user) {
+        console.log('🔍 Checking storage for user:', user.id);
+        const prefs = await storage.getUserPreferences(user.id);
+        console.log('Storage preferences:', prefs);
+        
+        if (prefs && prefs.lastRecommendations) {
+          console.log('✅ Got recommendations from storage');
+          setRecommendations(prefs.lastRecommendations);
+          setLoading(false);
+          return;
+        }
       }
+
+      // No recommendations found
+      console.log('❌ No recommendations found, redirecting');
+      navigate(user ? '/dashboard' : '/', { replace: true });
+      
     } catch (error) {
       console.error('❌ Failed to load recommendations:', error);
-      navigate('/dashboard', { replace: true });
+      navigate(user ? '/dashboard' : '/', { replace: true });
     } finally {
       setLoading(false);
     }
