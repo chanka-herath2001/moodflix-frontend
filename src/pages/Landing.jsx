@@ -291,7 +291,7 @@ const Landing = () => {
         </Box>
 
         {/* DISCLAIMER */}
-        <Card
+        {/* <Card
           sx={{
             mb: 6,
             background: 'rgba(255,255,255,0.04)',
@@ -312,7 +312,7 @@ const Landing = () => {
               are experimental. Your feedback is highly appreciated!
             </Typography>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* MUSIC + MOVIES SECTION */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
