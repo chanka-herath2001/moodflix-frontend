@@ -244,7 +244,7 @@ const Landing = () => {
           </Box>
 
           <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
-            Discover movies through your music taste
+            Movie Recommendations Based on Your Music Mood
           </Typography>
 
           <Typography
@@ -256,8 +256,10 @@ const Landing = () => {
               mb: 3,
             }}
           >
-            MoodFlix is an experimental recommendation platform that connects music
-            emotions with movie storytelling to explore how sound and cinema intersect.
+            MoodFlix analyzes the emotional tone of the songs you love and 
+            recommends movies that match your mood. By combining music emotion 
+            detection with film sentiment analysis, MoodFlix creates personalized 
+            movie suggestions that feel emotionally connected to your listening habits.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
